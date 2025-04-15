@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/vega@6.1.2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@6.1.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@7.0.1"></script>
+</head>
+<body>
+  <div id="vis"/>
+  <script>
+    const spec = {
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "usermeta": {
+    "embedOptions": {
+      "actions": {
+        "export": true,
+        "source": false,
+        "compiled": false,
+        "editor": false
+      }
+    }
+  },
+  "title": {
+    "text": "Sales Dashboard",
+    "anchor": "middle",
+    "fontSize": 24,
+    "font": "Helvetica",
+    "color": "#444",
+    "subtitle": "A Customized Visualization for Comparison",
+    "subtitleFontSize": 13,
+    "subtitleColor": "#555"
+  },
+  "vconcat": [
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/iffyaiyan/vega_assgn/refs/heads/master/HW_III.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"calculate": "toNumber(trim(datum['Units']))", "as": "UnitsNum"},
+        {
+          "calculate": "toNumber(trim(datum['Unit Cost']))",
+          "as": "UnitCostNum"
+        },
+        {
+          "calculate": "datum.UnitsNum * datum.UnitCostNum",
+          "as": "ComputedTotal"
+        },
+        {
+          "aggregate": [
+            {"op": "sum", "field": "ComputedTotal", "as": "TotalSum"}
+          ],
+          "groupby": ["Rep"]
+        }
+      ],
+      "mark": {"type": "arc", "innerRadius": 50, "outerRadius": 100},
+      "encoding": {
+        "theta": {"field": "TotalSum", "type": "quantitative"},
+        "color": {
+          "field": "Rep",
+          "type": "nominal",
+          "legend": {"title": "Sales Rep"}
+        },
+        "tooltip": [
+          {"field": "Rep", "type": "nominal"},
+          {"field": "TotalSum", "type": "quantitative", "title": "Total Sales"}
+        ]
+      },
+      "title": "Sales Contribution by Representative"
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/iffyaiyan/vega_assgn/refs/heads/master/HW_III.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"calculate": "toNumber(trim(datum['Units']))", "as": "UnitsNum"},
+        {"calculate": "toNumber(trim(datum['Unit Cost']))", "as": "UnitCostNum"}
+      ],
+      "mark": "point",
+      "encoding": {
+        "x": {"field": "UnitsNum", "type": "quantitative", "title": "Units"},
+        "y": {
+          "field": "UnitCostNum",
+          "type": "quantitative",
+          "title": "Unit Cost"
+        },
+        "color": {
+          "condition": {
+            "selection": "brush",
+            "field": "Item",
+            "type": "nominal"
+          },
+          "value": "lightgray"
+        },
+        "tooltip": [
+          {"field": "Item", "type": "nominal"},
+          {"field": "Rep", "type": "nominal"},
+          {"field": "UnitsNum", "type": "quantitative"},
+          {"field": "UnitCostNum", "type": "quantitative"}
+        ]
+      },
+      "selection": {"brush": {"type": "interval"}},
+      "title": "Scatter: Units vs Unit Cost"
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/iffyaiyan/vega_assgn/refs/heads/master/HW_III.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"calculate": "toDate(datum['OrderDate'])", "as": "Date"},
+        {"calculate": "toNumber(trim(datum['Units']))", "as": "UnitsNum"},
+        {
+          "calculate": "toNumber(trim(datum['Unit Cost']))",
+          "as": "UnitCostNum"
+        },
+        {"calculate": "datum.UnitsNum * datum.UnitCostNum", "as": "Total"}
+      ],
+      "mark": {"type": "area", "interpolate": "monotone"},
+      "encoding": {
+        "x": {"field": "Date", "type": "temporal", "title": "Order Date"},
+        "y": {
+          "field": "Total",
+          "type": "quantitative",
+          "stack": "center",
+          "title": "Sales Value"
+        },
+        "color": {
+          "field": "Item",
+          "type": "nominal",
+          "legend": {"title": "Product Type"}
+        },
+        "tooltip": [
+          {"field": "Item", "type": "nominal"},
+          {"field": "Date", "type": "temporal"},
+          {"field": "Total", "type": "quantitative"}
+        ]
+      },
+      "title": "Sales Stream Over Time by Item"
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/iffyaiyan/vega_assgn/refs/heads/master/HW_III.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"calculate": "toNumber(trim(datum['Units']))", "as": "UnitsNum"}
+      ],
+      "layer": [
+        {
+          "mark": {"type": "bar", "color": "#FFB74D"},
+          "encoding": {
+            "x": {
+              "field": "UnitsNum",
+              "bin": {"maxbins": 10},
+              "type": "quantitative",
+              "title": "Binned Units"
+            },
+            "y": {
+              "aggregate": "count",
+              "type": "quantitative",
+              "title": "Frequency"
+            }
+          }
+        },
+        {
+          "transform": [
+            {
+              "aggregate": [
+                {"op": "mean", "field": "UnitsNum", "as": "meanUnits"}
+              ]
+            }
+          ],
+          "mark": {"type": "rule", "color": "darkred", "strokeWidth": 2},
+          "encoding": {"x": {"field": "meanUnits", "type": "quantitative"}}
+        },
+        {
+          "transform": [
+            {
+              "aggregate": [
+                {"op": "mean", "field": "UnitsNum", "as": "meanUnits"}
+              ]
+            }
+          ],
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "dx": 5,
+            "dy": -5,
+            "color": "darkred"
+          },
+          "encoding": {
+            "x": {"field": "meanUnits", "type": "quantitative"},
+            "y": {"value": 0},
+            "text": {"value": "Average"}
+          }
+        }
+      ],
+      "title": "Distribution of Units Sold",
+      "config": {
+        "background": "#f8f8f8",
+        "style": {
+          "guide-label": {"fill": "#333"},
+          "guide-title": {"fill": "#222"},
+          "title": {"color": "#111"}
+        }
+      }
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/iffyaiyan/vega_assgn/refs/heads/master/HW_III.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {
+          "calculate": "toNumber(trim(datum['Unit Cost']))",
+          "as": "UnitCostNum"
+        },
+        {
+          "aggregate": [
+            {"op": "mean", "field": "UnitCostNum", "as": "AvgUnitCost"}
+          ],
+          "groupby": ["Region"]
+        }
+      ],
+      "mark": {"type": "arc", "outerRadius": 100},
+      "encoding": {
+        "theta": {"field": "AvgUnitCost", "type": "quantitative"},
+        "color": {"field": "Region", "type": "nominal"},
+        "tooltip": [
+          {"field": "Region", "type": "nominal"},
+          {
+            "field": "AvgUnitCost",
+            "type": "quantitative",
+            "title": "Average Unit Cost"
+          }
+        ]
+      },
+      "title": "Average Unit Cost by Region (Pie View)"
+    },
+    {
+      "data": {
+        "url": "https://raw.githubusercontent.com/iffyaiyan/vega_assgn/refs/heads/master/HW_III.csv",
+        "format": {"type": "csv"}
+      },
+      "transform": [
+        {"calculate": "toDate(datum['OrderDate'])", "as": "Date"},
+        {"calculate": "toNumber(trim(datum['Units']))", "as": "UnitsNum"},
+        {
+          "calculate": "toNumber(trim(datum['Unit Cost']))",
+          "as": "UnitCostNum"
+        },
+        {"calculate": "datum.UnitsNum * datum.UnitCostNum", "as": "Total"},
+        {"timeUnit": "yearmonth", "field": "Date", "as": "Month"},
+        {
+          "aggregate": [{"op": "sum", "field": "Total", "as": "TotalSales"}],
+          "groupby": ["Month"]
+        }
+      ],
+      "mark": "bar",
+      "encoding": {
+        "x": {"field": "Month", "type": "temporal", "title": "Month"},
+        "y": {"field": "TotalSales", "type": "quantitative", "title": "Sales"},
+        "color": {"value": "#26A69A"},
+        "tooltip": [
+          {"field": "Month", "type": "temporal"},
+          {"field": "TotalSales", "type": "quantitative"}
+        ]
+      },
+      "title": "Monthly Total Sales (Bar View)"
+    }
+  ],
+  "config": {}
+};
+    vegaEmbed("#vis", spec, {mode: "vega-lite"}).then(console.log).catch(console.warn);
+  </script>
+</body>
+</html>
